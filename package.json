@@ -1,12 +1,15 @@
 {
   "name": "gimme-emails",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Grabs all valid emails from a GitHub repo or user page.",
   "main": "index.js",
   "scripts": {
     "start": "node ./index.js"
   },
-  "keywords": [],
+  "engines": {
+    "node": ">=8"
+  },
+  "keywords": ["git", "GitHub"],
   "author": "Clayton Hadaway <clayton@codefor.cash>",
   "license": "UNLICENSED",
   "dependencies": {
