@@ -1,5 +1,5 @@
 {
-  "name": "gimme-email",
+  "name": "gimme-emails",
   "version": "0.0.1",
   "description": "Grabs all valid emails from a GitHub repo or user page.",
   "main": "index.js",
@@ -7,7 +7,7 @@
     "start": "node ./index.js"
   },
   "keywords": [],
-  "author": "Clayton Hadaway <me@hadaclay.com>",
+  "author": "Clayton Hadaway <clayton@codefor.cash>",
   "license": "UNLICENSED",
   "dependencies": {
     "axios": "^0.19.0",
