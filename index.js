@@ -3,6 +3,10 @@ const tmp = require("tmp");
 const axios = require("axios");
 const path = require("path");
 
+//TODO: add more invalid emails in processEmailList()
+//TODO: loading indicators
+//TODO: output text file of emails instead of console.log()
+
 // Create temp directory
 const tmpDir = tmp.dirSync();
 
@@ -11,10 +15,10 @@ main().catch(console.error);
 async function main() {
   if (process.argv.length === 3) {
     const githubURLs = await parseArgumentURL(process.argv[2]);
-    Promise.all(cloneRepos(githubURLs))
-      .then(emails => { 
-        setTimeout(() => console.log(processEmailList(emails)), 10);
-      });
+    Promise.all(cloneRepos(githubURLs)).then(emails => {
+      // Hack to make `emails` variable populate and not return empty because of async
+      setTimeout(() => console.log(processEmailList(emails)), 10);
+    });
   } else {
     console.log("Syntax: npm run start <GitHub URL>");
   }
@@ -75,8 +79,8 @@ async function parseArgumentURL(url) {
 }
 
 function processEmailList(emails) {
-  const temp = [].concat.apply([], emails)
-  return temp 
+  const temp = [].concat.apply([], emails);
+  return temp
     .filter((item, i, arr) => arr.indexOf(item) === i)
     .filter(email => email.includes("users.noreply.github.com") === false);
 }
