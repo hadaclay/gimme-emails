@@ -11,7 +11,10 @@ main().catch(console.error);
 async function main() {
   if (process.argv.length === 3) {
     const githubURLs = await parseArgumentURL(process.argv[2]);
-    await getRepoEmails(githubURLs).catch(console.error);
+    Promise.all(cloneRepos(githubURLs))
+      .then(emails => { 
+        setTimeout(() => console.log(processEmailList(emails)), 10);
+      });
   } else {
     console.log("Syntax: npm run start <GitHub URL>");
   }
@@ -19,37 +22,30 @@ async function main() {
   return tmpDir.removeCallback();
 }
 
-async function getRepoEmails(repoList) {
-  const repos = await Promise.all(cloneRepos(repoList));
-  const repoCount = repos.length;
-  const emails = [];
-
-  Promise.all(repos.map(async repo => {
-    const masterCommit = await repo.getHeadCommit();
-    const history = masterCommit.history(nodegit.Revwalk.SORT.TIME);
-
-    const repoEmails = [];
-
-    history.on("commit", commit => {
-      repoEmails.push(commit.author().email());
-    });
-
-    history.on("end", () => {
-      emails.push(processEmailList(repoEmails));
-      console.log(emails);
-    });
-
-    history.start();
-  }));
-}
-
 function cloneRepos(repoLinks) {
-  return repoLinks.map(repo => cloneRepo(repo));
+  return repoLinks.map(repo => cloneRepoEmails(repo));
 }
 
-async function cloneRepo(repoName) {
+async function cloneRepoEmails(repoName) {
+  function getRepoName(repoPath) {
+    const tempArray = repoPath.split("/");
+    return tempArray[tempArray.length - 1];
+  }
+
   const localPath = path.join(tmpDir.name, getRepoName(repoName));
-  return nodegit.Clone(repoName, localPath, { bare: 1 });
+  const repoEmails = [];
+
+  const repo = await nodegit.Clone(repoName, localPath, { bare: 1 });
+  const masterCommit = await repo.getHeadCommit();
+  const history = masterCommit.history(nodegit.Revwalk.SORT.TIME);
+
+  history.on("commit", commit => {
+    repoEmails.push(commit.author().email());
+  });
+
+  history.start();
+
+  return repoEmails;
 }
 
 async function getUserRepos(url) {
@@ -65,16 +61,10 @@ async function getUserRepos(url) {
   return await userRepos.data.map(repo => repo.svn_url);
 }
 
-function getRepoName(repoPath) {
-  const tempArray = repoPath.split("/");
-  return tempArray[tempArray.length - 1];
-}
-
 async function parseArgumentURL(url) {
   if (url.split("/").length === 5) {
     // Repo Page
     console.log("Repo Page");
-    console.log(`1. Url is ${[url]}`)
     return [url];
   } else if (url.split("/").length === 4) {
     // User Page
@@ -85,7 +75,8 @@ async function parseArgumentURL(url) {
 }
 
 function processEmailList(emails) {
-  return emails 
+  const temp = [].concat.apply([], emails)
+  return temp 
     .filter((item, i, arr) => arr.indexOf(item) === i)
     .filter(email => email.includes("users.noreply.github.com") === false);
 }
