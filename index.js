@@ -1,14 +1,18 @@
 const nodegit = require("nodegit");
 const tmp = require("tmp");
 const axios = require("axios");
+const ora = require("ora");
 const path = require("path");
 
 //TODO: add more invalid emails in processEmailList()
-//TODO: loading indicators
 //TODO: output text file of emails instead of console.log()
+//TODO: different verbosity command line args
 
 // Create temp directory
 const tmpDir = tmp.dirSync();
+const spinner = ora();
+
+let isUserPage = null;
 
 main().catch(console.error);
 
@@ -17,7 +21,11 @@ async function main() {
     const githubURLs = await parseArgumentURL(process.argv[2]);
     Promise.all(cloneRepos(githubURLs)).then(emails => {
       // Hack to make `emails` variable populate and not return empty because of async
-      setTimeout(() => console.log(processEmailList(emails)), 10);
+      setTimeout(() => {
+        spinner.stop();
+        const processedEmails = processEmailList(emails);
+        processedEmails.length > 0 ? console.log(processedEmails) : console.log("No Emails Found :(");
+      }, 50);
     });
   } else {
     console.log("Syntax: npm run start <GitHub URL>");
@@ -48,6 +56,7 @@ async function cloneRepoEmails(repoName) {
   });
 
   history.start();
+  spinner.start(`Cloning Repo${isUserPage ? 's' : ''}`);
 
   return repoEmails;
 }
@@ -66,13 +75,14 @@ async function getUserRepos(url) {
 }
 
 async function parseArgumentURL(url) {
-  if (url.split("/").length === 5) {
-    // Repo Page
-    console.log("Repo Page");
+  const splitURL = url.split("/");
+  if (splitURL.length === 5) { // Repo Page
+    isUserPage = false;
+    console.log(`Repo Page for ${splitURL[3]}/${splitURL[4]}`);
     return [url];
-  } else if (url.split("/").length === 4) {
-    // User Page
-    console.log("User Page");
+  } else if (splitURL.length === 4) { // User Page
+    isUserPage = true;
+    console.log(`User Page for ${splitURL[3]}`);
     const urls = await getUserRepos(url);
     return urls;
   }
